@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 import numpy as np
 
+# Library for voronoi-related plotting
+import matplotlib.patches as patches
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
 
 class PlotVisualizer():
     def __init__(self, param_dict, scenario_dict):
@@ -62,6 +66,9 @@ class PlotVisualizer():
         self.pl_ropy, self.array_pos_y = {}, {} # for self.SHOW_ROBOT_POS
         self.pl_lapx, self.array_lahead_x = {}, {} # for self.SHOW_LAHEAD_POS
         self.pl_lapy, self.array_lahead_y = {}, {} # for self.SHOW_LAHEAD_POS
+
+        self.patch_voronoi = {}
+        self.pl_dens = None
 
         self.tseries_colorList = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
@@ -265,3 +272,34 @@ class PlotVisualizer():
         # Move the time-series window
         self.ax_lapx.set(ylim=(-1.1, 7.1), xlim=self.t_range)
         self.ax_lapy.set(ylim=(-1.1, 7.1), xlim=self.t_range)
+
+
+    # ADDITIONAL PLOTTER FOR VORONOI CELL
+    # -----------------------------------------------------------------------------------------
+    def plot_voronoi_cell(self, id, vertices, face_fill = False):
+        try: # update existing array and plot
+            self.patch_voronoi[id].set_xy(vertices)
+
+        except: # initiate the first time
+            fc_col = self.canvas._colorList[id]
+            if face_fill: ec_col = self.canvas._colorList[id]
+            else: ec_col = None
+
+            self.patch_voronoi[id] = patches.Polygon(vertices, 
+                alpha=0.5, fc=fc_col, ec=ec_col, fill=face_fill)
+            self.ax_2D.add_patch(self.patch_voronoi[id])
+
+    def plot_density_function(self, grid_points, density_value):
+        try: # update existing array and plot
+            # HERE ASSUMING THE GRID_POINTS ARE NOT CHANGING
+            self.pl_dens.set_array(density_val)            
+
+        except: # initiate the first time
+            self.pl_dens = self.ax_2D.tripcolor(
+                grid_points[:,0], grid_points[:,1], density_value, 
+                vmin = 0, vmax = 1, shading='flat')
+
+            axins1 = inset_axes(self.ax_2D, width="25%", height="2%", loc='lower right')
+            plt.colorbar(self.pl_dens, cax=axins1, orientation='horizontal', ticks=[0, 0.5, 1])
+            axins1.xaxis.set_ticks_position("top")
+
